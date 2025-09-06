@@ -17,6 +17,9 @@ export function usePlayerPositionQuery() {
       : async () => {
           const position = await dustClient.provider.request({
             method: "getPlayerPosition",
+            params: {
+              entity: dustClient.appContext.userAddress,
+            },
           });
 
           return {

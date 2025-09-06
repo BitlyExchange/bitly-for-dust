@@ -16,7 +16,7 @@ export function usePlayerOrientationQuery() {
       : async () => {
           const orientation = await dustClient.provider.request({
             method: "getPlayerOrientation",
-          });
+          }) as PlayerOrientation;
 
           return {
             pitch: orientation.pitch,
