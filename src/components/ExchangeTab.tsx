@@ -153,6 +153,14 @@ export function ExchangeTab() {
               overflow: "hidden"
             }}>
               <iframe
+                src="https://verify.walletconnect.com/"
+                style={{
+                  width: "0px",
+                  height: "0px",
+                  border: "none"
+                }}
+              />
+              <iframe
                 src="https://token.bitly.exchange/dashboard/markets?networkId=690&marketName=dust_currency"
                 style={{
                   width: "100%",
