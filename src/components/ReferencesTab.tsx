@@ -49,11 +49,6 @@ export function ReferencesTab() {
                 Documentation
               </a>
             </li>
-            <li style={{ marginBottom: "8px" }}>
-              <a href="https://token.bitly.exchange/?network=790" target="_blank" rel="noopener noreferrer" style={{ color: "#55AAFF", textDecoration: "none" }}>
-                Exchange
-              </a>
-            </li>
           </ul>
         </div>
 

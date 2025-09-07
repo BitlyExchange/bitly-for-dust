@@ -2,9 +2,10 @@ import { useState } from "react";
 import { CityDetailsTab } from "./components/CityDetailsTab";
 import { VWATab } from "./components/VWATab";
 import { NewsTab } from "./components/NewsTab";
+import { ExchangeTab } from "./components/ExchangeTab";
 import { ReferencesTab } from "./components/ReferencesTab";
 
-type TabType = "cityDetails" | "vwa" | "news" | "references";
+type TabType = "cityDetails" | "vwa" | "news" | "exchange" | "references";
 
 export function App() {
   // Tab management
@@ -124,6 +125,25 @@ export function App() {
           News
         </button>
         <button
+          onClick={() => setActiveTab("exchange")}
+          style={{
+            padding: "10px 20px",
+            backgroundColor: activeTab === "exchange" ? "#55AAFF" : "#333333",
+            color: activeTab === "exchange" ? "#000000" : "#FFFFFF",
+            border: "2px solid #555555",
+            borderBottom: activeTab === "exchange" ? "2px solid #55AAFF" : "none",
+            borderRadius: "8px 8px 0 0",
+            cursor: "pointer",
+            fontFamily: "'Minecraft', monospace",
+            fontSize: "1rem",
+            fontWeight: "bold",
+            textShadow: activeTab === "exchange" ? "none" : "1px 1px 0px #000000",
+            transition: "all 0.2s ease",
+          }}
+        >
+          Exchange
+        </button>
+        <button
           onClick={() => setActiveTab("references")}
           style={{
             padding: "10px 20px",
@@ -149,6 +169,7 @@ export function App() {
         {activeTab === "cityDetails" && <CityDetailsTab />}
         {activeTab === "vwa" && <VWATab />}
         {activeTab === "news" && <NewsTab />}
+        {activeTab === "exchange" && <ExchangeTab />}
         {activeTab === "references" && <ReferencesTab />}
       </div>
     </div>
