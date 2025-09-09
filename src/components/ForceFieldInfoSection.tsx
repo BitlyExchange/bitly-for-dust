@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { encodeBlock } from "@dust/world/internal";
 
 export function ForceFieldInfoSection() {
@@ -14,6 +14,12 @@ export function ForceFieldInfoSection() {
     loading: true,
     error: null,
   });
+  
+  // Current energy state that will be updated dynamically
+  const [currentEnergy, setCurrentEnergy] = useState<number | null>(null);
+  
+  // Last update timestamp
+  const lastUpdateTimeRef = useRef<number>(Date.now());
 
   // ForceField coordinates
   const forceFieldCoordinates: [number, number, number] = [226, 71, -2680];
@@ -100,6 +106,10 @@ export function ForceFieldInfoSection() {
           loading: false,
           error: null
         });
+        
+        // Initialize current energy
+        setCurrentEnergy(energy);
+        lastUpdateTimeRef.current = Date.now();
       } catch (error) {
         console.error("Error fetching ForceField data:", error);
         setForceFieldData({
@@ -112,7 +122,34 @@ export function ForceFieldInfoSection() {
     };
     
     fetchForceFieldData();
-  }, []);
+    
+    // Set up interval to update energy consumption
+    const intervalId = setInterval(() => {
+      setCurrentEnergy(prevEnergy => {
+        if (prevEnergy === null || forceFieldData.fragmentCount === null) return prevEnergy;
+        
+        // Calculate energy consumption rate (energy units per day)
+        const dailyConsumption = 8 * forceFieldData.fragmentCount;
+        
+        // Calculate time elapsed since last update (in days)
+        const now = Date.now();
+        const elapsedMs = now - lastUpdateTimeRef.current;
+        const elapsedDays = elapsedMs / (1000 * 60 * 60 * 24);
+        
+        // Update last update time
+        lastUpdateTimeRef.current = now;
+        
+        // Calculate new energy value
+        const consumedEnergy = dailyConsumption * elapsedDays;
+        const newEnergy = Math.max(0, prevEnergy - consumedEnergy);
+        
+        return newEnergy;
+      });
+    }, 1000); // Update every second
+    
+    // Clean up interval on unmount
+    return () => clearInterval(intervalId);
+  }, [forceFieldData.fragmentCount]);
 
   return (
     <div
@@ -240,15 +277,15 @@ export function ForceFieldInfoSection() {
                   color: "#55FFFF",
                   borderBottom: "1px solid #333333"
                 }}>
-                  {forceFieldData.energy !== null ? (
+                  {currentEnergy !== null ? (
                     <span style={{ fontFamily: "monospace", letterSpacing: "0.5px" }}>
-                      {forceFieldData.energy.toLocaleString()}
+                      {currentEnergy.toLocaleString(undefined, { maximumFractionDigits: 2 })}
                     </span>
                   ) : "Unknown"}
                 </td>
               </tr>
               
-              {forceFieldData.energy !== null && forceFieldData.fragmentCount !== null && (
+              {currentEnergy !== null && forceFieldData.fragmentCount !== null && (
                 <tr style={{
                   transition: "background-color 0.2s"
                 }}>
@@ -266,23 +303,30 @@ export function ForceFieldInfoSection() {
                     borderBottom: "1px solid #333333"
                   }}>
                     {(() => {
-                      // Calculate daily consumption based on fragment count (80 per fragment)
+                      // Calculate daily consumption based on fragment count (8 per fragment)
                       const dailyConsumption = 8 * forceFieldData.fragmentCount;
                       
                       // If there are no fragments, show infinite duration
                       if (dailyConsumption === 0) return "∞ (no fragments)";
                       
-                      const totalDays = forceFieldData.energy / dailyConsumption;
+                      const totalDays = currentEnergy / dailyConsumption;
                       const days = Math.floor(totalDays);
                       const hours = Math.floor((totalDays - days) * 24);
+                      const minutes = Math.floor(((totalDays - days) * 24 - hours) * 60);
                       
-                      return days > 0
-                        ? hours > 0
+                      if (days > 0) {
+                        return hours > 0
                           ? `${days} days ${hours} hours`
-                          : `${days} days`
-                        : hours > 0
-                          ? `${hours} hours`
-                          : "Less than 1 hour";
+                          : `${days} days`;
+                      } else if (hours > 0) {
+                        return minutes > 0
+                          ? `${hours} hours ${minutes} minutes`
+                          : `${hours} hours`;
+                      } else if (minutes > 0) {
+                        return `${minutes} minutes`;
+                      } else {
+                        return "Less than 1 minute";
+                      }
                     })()}
                   </td>
                 </tr>
