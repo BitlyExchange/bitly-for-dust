@@ -1,0 +1,8 @@
+{
+    "Battery": {
+        "icon": "https://alpha.dustproject.org/api/assets/objects/32793/icon",
+        "contract": "0xeB063A658C5132AfbC976C48640e11C8FA77f8Ba",
+        "coordinate": [[229, 71, -2683]],
+        "standingpoint": [229, 72, -2683]
+    }
+}

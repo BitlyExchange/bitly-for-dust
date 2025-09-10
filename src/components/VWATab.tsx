@@ -1,4 +1,22 @@
+import { useState } from "react";
+import { ObjectCard } from "./ObjectCard";
+
 export function VWATab() {
+  // State for feedback messages
+  const [feedback, setFeedback] = useState<{
+    message: string;
+    type: "success" | "error" | "info";
+  } | null>(null);
+
+  // Function to show feedback
+  const showFeedback = (message: string, type: "success" | "error" | "info") => {
+    setFeedback({ message, type });
+    // Auto-hide feedback after 5 seconds
+    setTimeout(() => {
+      setFeedback(null);
+    }, 5000);
+  };
+
   return (
     <div
       style={{
@@ -25,6 +43,24 @@ export function VWATab() {
         VWA (Virtual World Asset)
       </h2>
       
+      {/* Feedback message */}
+      {feedback && (
+        <div
+          style={{
+            backgroundColor:
+              feedback.type === "success" ? "#4CAF50" :
+              feedback.type === "error" ? "#F44336" : "#2196F3",
+            color: "white",
+            padding: "10px 15px",
+            borderRadius: "4px",
+            marginBottom: "15px",
+            fontSize: "1rem",
+          }}
+        >
+          {feedback.message}
+        </div>
+      )}
+      
       <div
         style={{
           backgroundColor: "#2A2A2A",
@@ -35,11 +71,22 @@ export function VWATab() {
         }}
       >
         <p style={{ fontSize: "1.1rem", marginBottom: "10px" }}>
-          Welcome to the VWA tab. This section will contain information about VWA.
+          Welcome to the VWA tab. Here you can interact with Virtual World Assets.
         </p>
-        <p style={{ fontSize: "1rem", color: "#AAAAAA" }}>
-          Coming soon...
-        </p>
+      </div>
+      
+      {/* Cards container with flex layout - 2 cards per row */}
+      <div
+        style={{
+          display: "flex",
+          flexWrap: "wrap",
+          justifyContent: "space-between",
+          gap: "15px",
+        }}
+      >
+        {/* For demonstration, showing 2 BATTERY cards in a row */}
+        <ObjectCard objectName="Battery" showFeedback={showFeedback} />
+        <ObjectCard objectName="Battery" showFeedback={showFeedback} />
       </div>
     </div>
   );

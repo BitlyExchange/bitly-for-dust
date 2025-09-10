@@ -86,7 +86,7 @@ export function App() {
         >
           City Details
         </button>
-        {/* <button
+        <button
           onClick={() => setActiveTab("vwa")}
           style={{
             padding: "10px 20px",
@@ -104,7 +104,7 @@ export function App() {
           }}
         >
           VWA
-        </button> */}
+        </button>
         <button
           onClick={() => setActiveTab("news")}
           style={{

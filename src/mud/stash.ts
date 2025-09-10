@@ -10,6 +10,7 @@ const selectedDustTables = {
   Energy: dustWorldConfig.tables.Energy,
   Fragment: dustWorldConfig.tables.Fragment,
   Machine: dustWorldConfig.tables.Machine,
+  InventorySlot: dustWorldConfig.tables.InventorySlot,
 };
 
 const selectedProgramTables = {
