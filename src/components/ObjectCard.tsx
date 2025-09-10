@@ -1,9 +1,12 @@
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { connectDustClient } from "dustkit/internal";
-import { encodeBlock } from "@dust/world/internal";
-import { usePlayerInventory } from "../common/usePlayerInventory";
+import { encodeBlock, objects } from "@dust/world/internal";
+import { resourceToHex } from "@latticexyz/common";
+import TransferSystemABI from "@dust/world/out/TransferSystem.sol/TransferSystem.abi";
+import { usePlayerInventory, getSlotsWithObject } from "../common/usePlayerInventory";
 import { useTokenBalance } from "../common/useTokenBalance";
+import { usePlayerEntityId } from "../common/usePlayerEntityId";
 
 // Define the props interface for the component
 interface ObjectCardProps {
@@ -146,6 +149,9 @@ export function ObjectCard({ objectName, showFeedback = () => {} }: ObjectCardPr
     queryFn: connectDustClient,
   });
   
+  // Get player's entity ID
+  const playerEntityIdQuery = usePlayerEntityId();
+  
   // Get player's inventory for this object
   const inventoryQuery = usePlayerInventory(objectName);
   
@@ -154,6 +160,7 @@ export function ObjectCard({ objectName, showFeedback = () => {} }: ObjectCardPr
   
   // Update maxAmount based on inventory when option changes or inventory data loads
   useEffect(() => {
+    console.log("ww: inventoryQuery.data", inventoryQuery.data);
     if (option === "tokenize" && inventoryQuery.data !== undefined) {
       // If tokenize is selected, set max to player's inventory count
       setMaxAmount(inventoryQuery.data.toString());
@@ -254,12 +261,111 @@ export function ObjectCard({ objectName, showFeedback = () => {} }: ObjectCardPr
   };
 
   // Handle confirm button click
-  const handleConfirm = () => {
-    // In a real app, this would call a contract method
-    showFeedback(
-      `${option === "tokenize" ? "Tokenized" : "Claimed"} ${amount} tokens for ${objectName}`,
-      "success"
-    );
+  const handleConfirm = async () => {
+    try {
+      if (!dustClient.data) {
+        showFeedback("Dust client not connected", "error");
+        return;
+      }
+
+      if (!objectInfo || !objectInfo.coordinate || objectInfo.coordinate.length === 0) {
+        showFeedback("Object coordinates not available", "error");
+        return;
+      }
+
+      // Get player entity ID
+      const playerEntityId = playerEntityIdQuery.data;
+      
+      if (!playerEntityId) {
+        showFeedback("Player entity ID not available", "error");
+        return;
+      }
+
+      // Get object type ID
+      const objectTypeId = (objects.find(e => e.name === objectName))?.id;
+      if (!objectTypeId) {
+        showFeedback(`Object type ${objectName} not found`, "error");
+        return;
+      }
+
+      // Get chest entity ID by encoding the coordinates
+      const chestCoordinates = objectInfo.coordinate[0]; // Use the first coordinate
+      const chestEntityId = encodeBlock(chestCoordinates as [number, number, number]);
+
+      // Prepare transfer parameters based on option
+      let fromEntityId, toEntityId, transfers;
+      const numAmount = parseInt(amount);
+
+      if (option === "tokenize") {
+        // For tokenize: transfer from player to chest
+        fromEntityId = playerEntityId;
+        toEntityId = chestEntityId;
+        
+        // Find slots containing this object
+        const slots = getSlotsWithObject(playerEntityId as `0x${string}`, objectTypeId);
+        if (slots.length === 0) {
+          showFeedback(`No ${objectName} found in inventory`, "error");
+          return;
+        }
+        
+        // Prepare transfers array
+        transfers = [{
+          slotFrom: slots[0].slot, // Use the first slot that has the object
+          slotTo: 0, // Target slot in chest
+          amount: numAmount
+        }];
+      } else {
+        // For claim: transfer from chest to player
+        fromEntityId = chestEntityId;
+        toEntityId = playerEntityId;
+        
+        // Prepare transfers array
+        transfers = [{
+          slotFrom: 0, // Source slot in chest
+          slotTo: 0, // Target slot in player inventory (first available)
+          amount: numAmount
+        }];
+      }
+
+      // Call the transfer function
+      await dustClient.data.provider.request({
+        method: "systemCall",
+        params: [
+          {
+            systemId: resourceToHex({
+              type: "system",
+              namespace: "",
+              name: "",
+            }),
+            abi: TransferSystemABI,
+            functionName: "transfer",
+            args: [
+              playerEntityId, // caller
+              fromEntityId, // from
+              toEntityId, // to
+              transfers, // transfers array
+              "0x" // extraData (empty)
+            ],
+          },
+        ],
+      });
+
+      // Show success message
+      showFeedback(
+        `${option === "tokenize" ? "Tokenized" : "Claimed"} ${amount} ${objectName} successfully`,
+        "success"
+      );
+      
+      // Reset amount field
+      setAmount("0");
+      
+    } catch (error: any) {
+      console.error("Transfer error:", error);
+      showFeedback(
+        `Failed to ${option === "tokenize" ? "tokenize" : "claim"} ${objectName}: ${error.message || "Unknown error"}`,
+        "error"
+      );
+    }
   };
 
   // If object info is not loaded yet, show loading
@@ -274,7 +380,19 @@ export function ObjectCard({ objectName, showFeedback = () => {} }: ObjectCardPr
   return (
     <div style={STYLES.container}>
       {/* Header with object name */}
-      <h3 style={STYLES.header}>{objectName}</h3>
+      <h3 style={STYLES.header}>
+        <img
+          src={objectInfo.icon}
+          alt={`${objectName} icon`}
+          style={{
+            width: '20px',
+            height: '20px',
+            marginRight: '8px',
+            verticalAlign: 'middle'
+          }}
+        />
+        {objectName}
+      </h3>
 
       {/* Standing point coordinates with set waypoint button */}
       <div style={STYLES.row}>
