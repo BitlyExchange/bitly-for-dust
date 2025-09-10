@@ -40,6 +40,9 @@ export function usePlayerInventory(objectName: string) {
   return inventoryQuery;
 }
 
+// Maximum number of inventory slots
+  const MAX_PLAYER_INVENTORY_SLOTS = 36;
+
 /**
  * Get inventory slots containing a specific object type
  */
@@ -54,9 +57,6 @@ export function getSlotsWithObject(
     slot: number;
     amount: number;
   }[] = [];
-  
-  // Maximum number of inventory slots
-  const MAX_PLAYER_INVENTORY_SLOTS = 36;
   
   for (let i = 0; i < MAX_PLAYER_INVENTORY_SLOTS; i++) {
     const inventorySlot = stash.getRecord({
@@ -77,5 +77,32 @@ export function getSlotsWithObject(
     });
   }
   
+  return slots;
+}
+
+
+export function getAllSlots(entityId: Hex) {
+  const slots: {
+    slot: number;
+    amount: number;
+    objectType: number;
+  }[] = [];
+  for (let i = 0; i < MAX_PLAYER_INVENTORY_SLOTS; i++) {
+    const inventorySlot = stash.getRecord({
+      table: tables.InventorySlot,
+      key: {
+        owner: entityId,
+        slot: i,
+      },
+    });
+    if (!inventorySlot) {
+      continue;
+    }
+    slots.push({
+      slot: i,
+      amount: inventorySlot.amount,
+      objectType: inventorySlot.objectType,
+    });
+  }
   return slots;
 }

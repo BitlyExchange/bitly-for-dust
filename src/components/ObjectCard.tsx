@@ -1,12 +1,12 @@
 import { useState, useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { connectDustClient } from "dustkit/internal";
-import { encodeBlock, objects } from "@dust/world/internal";
-import { resourceToHex } from "@latticexyz/common";
-import TransferSystemABI from "@dust/world/out/TransferSystem.sol/TransferSystem.abi";
-import { usePlayerInventory, getSlotsWithObject } from "../common/usePlayerInventory";
+import { encodeBlock, objects, Vec3 } from "@dust/world/internal";
+import { usePlayerInventory } from "../common/usePlayerInventory";
+import { InteractWithChest } from "../common/InteractWithChest";
 import { useTokenBalance } from "../common/useTokenBalance";
 import { usePlayerEntityId } from "../common/usePlayerEntityId";
+import { Hex } from "viem";
 
 // Define the props interface for the component
 interface ObjectCardProps {
@@ -18,8 +18,8 @@ interface ObjectCardProps {
 interface ObjectInfo {
   icon: string;
   contract: string;
-  coordinate: number[][];
-  standingpoint: number[];
+  coordinate: Vec3[];
+  standingpoint: Vec3;
 }
 
 // Define the interface for the vwa_info.json structure
@@ -143,6 +143,9 @@ export function ObjectCard({ objectName, showFeedback = () => {} }: ObjectCardPr
   const [maxAmount, setMaxAmount] = useState<string>("Loading...");
   const [isAmountValid, setIsAmountValid] = useState<boolean>(false);
 
+  // Get the query client for invalidating queries
+  const queryClient = useQueryClient();
+
   // Get the dust client
   const dustClient = useQuery({
     queryKey: ["dust-client"],
@@ -183,9 +186,23 @@ export function ObjectCard({ objectName, showFeedback = () => {} }: ObjectCardPr
       try {
         // In a real app, you might want to fetch this from an API
         // For now, we'll import it directly
-        const vwaInfo: VWAInfo = await import("../vwa_info.json").then(
+        const rawVwaInfo = await import("../vwa_info.json").then(
           (module) => module.default
         );
+        
+        // Transform the raw data to ensure coordinate arrays are properly typed as Vec3[]
+        const vwaInfo: VWAInfo = Object.entries(rawVwaInfo).reduce((acc, [key, value]) => {
+          // Ensure each coordinate array item is properly typed as Vec3
+          const objectInfo = value as any;
+          const typedObjectInfo: ObjectInfo = {
+            ...objectInfo,
+            coordinate: objectInfo.coordinate.map((coords: number[]) => coords as Vec3),
+            standingpoint: objectInfo.standingpoint as Vec3
+          };
+          
+          acc[key] = typedObjectInfo;
+          return acc;
+        }, {} as VWAInfo);
         
         if (vwaInfo[objectName]) {
           setObjectInfo(vwaInfo[objectName]);
@@ -288,76 +305,34 @@ export function ObjectCard({ objectName, showFeedback = () => {} }: ObjectCardPr
         return;
       }
 
-      // Get chest entity ID by encoding the coordinates
-      const chestCoordinates = objectInfo.coordinate[0]; // Use the first coordinate
-      const chestEntityId = encodeBlock(chestCoordinates as [number, number, number]);
-
-      // Prepare transfer parameters based on option
-      let fromEntityId, toEntityId, transfers;
       const numAmount = parseInt(amount);
 
-      if (option === "tokenize") {
-        // For tokenize: transfer from player to chest
-        fromEntityId = playerEntityId;
-        toEntityId = chestEntityId;
-        
-        // Find slots containing this object
-        const slots = getSlotsWithObject(playerEntityId as `0x${string}`, objectTypeId);
-        if (slots.length === 0) {
-          showFeedback(`No ${objectName} found in inventory`, "error");
-          return;
-        }
-        
-        // Prepare transfers array
-        transfers = [{
-          slotFrom: slots[0].slot, // Use the first slot that has the object
-          slotTo: 0, // Target slot in chest
-          amount: numAmount
-        }];
-      } else {
-        // For claim: transfer from chest to player
-        fromEntityId = chestEntityId;
-        toEntityId = playerEntityId;
-        
-        // Prepare transfers array
-        transfers = [{
-          slotFrom: 0, // Source slot in chest
-          slotTo: 0, // Target slot in player inventory (first available)
-          amount: numAmount
-        }];
-      }
+      // Use the extracted InteractWithChest function
+      await InteractWithChest(
+        option,
+        numAmount,
+        objectInfo.coordinate as Vec3[],
+        objectTypeId,
+        playerEntityId as Hex,
+        dustClient.data
+      );
+      
+      // Reset amount field
+      setAmount("0");
 
-      // Call the transfer function
-      await dustClient.data.provider.request({
-        method: "systemCall",
-        params: [
-          {
-            systemId: resourceToHex({
-              type: "system",
-              namespace: "",
-              name: "",
-            }),
-            abi: TransferSystemABI,
-            functionName: "transfer",
-            args: [
-              playerEntityId, // caller
-              fromEntityId, // from
-              toEntityId, // to
-              transfers, // transfers array
-              "0x" // extraData (empty)
-            ],
-          },
-        ],
-      });
+      // Wait 2sec
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      // Invalidate player inventory query to refresh inventory count
+      queryClient.invalidateQueries({ queryKey: ["player-inventory", playerEntityId, objectName] });
+      // Invalidate token balance query to refresh token balance
+      queryClient.invalidateQueries({ queryKey: ["tokenBalance", objectInfo.contract, playerEntityId] });
 
       // Show success message
       showFeedback(
         `${option === "tokenize" ? "Tokenized" : "Claimed"} ${amount} ${objectName} successfully`,
         "success"
       );
-      
-      // Reset amount field
-      setAmount("0");
       
     } catch (error: any) {
       console.error("Transfer error:", error);
