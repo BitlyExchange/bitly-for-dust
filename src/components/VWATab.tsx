@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ObjectCard } from "./ObjectCard";
 
 export function VWATab() {
@@ -7,6 +7,9 @@ export function VWATab() {
     message: string;
     type: "success" | "error" | "info";
   } | null>(null);
+  
+  // State for VWA object names
+  const [objectNames, setObjectNames] = useState<string[]>([]);
 
   // Function to show feedback
   const showFeedback = (message: string, type: "success" | "error" | "info") => {
@@ -16,6 +19,26 @@ export function VWATab() {
       setFeedback(null);
     }, 5000);
   };
+  
+  // Load object names from vwa_info.json
+  useEffect(() => {
+    const loadVWAInfo = async () => {
+      try {
+        const vwaInfo = await import("../vwa_info.json").then(
+          (module) => module.default
+        );
+        
+        // Extract keys from vwa_info.json as object names
+        const names = Object.keys(vwaInfo);
+        setObjectNames(names);
+      } catch (error) {
+        console.error("Error loading VWA info:", error);
+        showFeedback("Failed to load VWA information", "error");
+      }
+    };
+    
+    loadVWAInfo();
+  }, []);
 
   return (
     <div
@@ -84,9 +107,15 @@ export function VWATab() {
           gap: "15px",
         }}
       >
-        {/* For demonstration, showing 2 BATTERY cards in a row */}
-        <ObjectCard objectName="Battery" showFeedback={showFeedback} />
-        <ObjectCard objectName="Battery" showFeedback={showFeedback} />
+        {objectNames.length > 0 ? (
+          objectNames.map((name) => (
+            <ObjectCard key={name} objectName={name} showFeedback={showFeedback} />
+          ))
+        ) : (
+          <div style={{ textAlign: "center", width: "100%", padding: "20px" }}>
+            Loading VWA objects...
+          </div>
+        )}
       </div>
     </div>
   );
