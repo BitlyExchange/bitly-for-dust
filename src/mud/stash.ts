@@ -44,7 +44,7 @@ export const filters = [
 
 export const stash = createStash(stashConfig);
 
-await syncToStash({
+syncToStash({
   address: worldAddress,
   stash,
   filters,
