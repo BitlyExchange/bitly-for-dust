@@ -2,7 +2,31 @@
     "Battery": {
         "icon": "https://alpha.dustproject.org/api/assets/objects/32793/icon",
         "contract": "0xeB063A658C5132AfbC976C48640e11C8FA77f8Ba",
-        "coordinate": [[229, 71, -2683]],
-        "standingpoint": [229, 72, -2683]
+        "coordinate": [[329, 72, -2514]],
+        "standingpoint": [329, 72, -2513]
+    },
+    "Stone": {
+        "icon": "https://alpha.dustproject.org/api/assets/objects/4/icon",
+        "contract": "0xb1b24625d1225EF827679f040AC2c71719f0D0bB",
+        "coordinate": [[339, 72, -2514]],
+        "standingpoint": [339, 72, -2513]
+    },
+    "IronBar": {
+        "icon": "https://alpha.dustproject.org/api/assets/objects/32785/icon",
+        "contract": "0x266Be177F86E39f07d6A1FA2af0AcF69Ba481f4f",
+        "coordinate": [[349, 72, -2514]],
+        "standingpoint": [349, 72, -2513]
+    },
+    "JungleLog": {
+        "icon": "https://alpha.dustproject.org/api/assets/objects/52/icon",
+        "contract": "0x83AC203dA350ff96e3B1D189d9298a6bB09ac390",
+        "coordinate": [[359, 72, -2514]],
+        "standingpoint": [359, 72, -2513]
+    },
+    "Sand": {
+        "icon": "https://alpha.dustproject.org/api/assets/objects/32/icon",
+        "contract": "0x8317C054b54292F63d18Ace8cf02886Dc51EDc6c",
+        "coordinate": [[369, 72, -2514]],
+        "standingpoint": [369, 72, -2513]
     }
 }

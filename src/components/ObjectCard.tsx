@@ -163,7 +163,7 @@ export function ObjectCard({ objectName, showFeedback = () => {} }: ObjectCardPr
   
   // Update maxAmount based on inventory when option changes or inventory data loads
   useEffect(() => {
-    console.log("ww: inventoryQuery.data", inventoryQuery.data);
+    console.log("ww: inventoryQuery.data", inventoryQuery.data, tokenBalanceQuery.data);
     if (option === "tokenize" && inventoryQuery.data !== undefined) {
       // If tokenize is selected, set max to player's inventory count
       setMaxAmount(inventoryQuery.data.toString());

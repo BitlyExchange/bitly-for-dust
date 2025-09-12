@@ -27,9 +27,12 @@ export function usePlayerInventory(objectName: string) {
     enabled: !!playerEntityId,
     queryFn: () => {
       if (!playerEntityId) return 0;
+
+      console.log('ww: usePlayerInventory: ', playerEntityId);
       
       // Get all slots containing the specified object type
       const slots = getSlotsWithObject(playerEntityId as Hex, objectTypeId);
+      console.log('slots', slots);
       
       // Calculate total quantity across all slots
       const totalQuantity = slots.reduce((sum, slot) => sum + slot.amount, 0);
