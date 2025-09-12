@@ -1,23 +1,18 @@
 import { useState, useEffect } from "react";
+import { message } from "antd";
 import { ObjectCard } from "./ObjectCard";
+import { useSyncStatus } from "../mud/useSyncStatus";
 
 export function VWATab() {
-  // State for feedback messages
-  const [feedback, setFeedback] = useState<{
-    message: string;
-    type: "success" | "error" | "info";
-  } | null>(null);
+  // Get sync status
+  const syncStatus = useSyncStatus();
   
   // State for VWA object names
   const [objectNames, setObjectNames] = useState<string[]>([]);
 
-  // Function to show feedback
-  const showFeedback = (message: string, type: "success" | "error" | "info") => {
-    setFeedback({ message, type });
-    // Auto-hide feedback after 5 seconds
-    setTimeout(() => {
-      setFeedback(null);
-    }, 5000);
+  // Function to show feedback using Ant Design's message component
+  const showFeedback = (msg: string, type: "success" | "error" | "info") => {
+    message[type](msg, 5); // Display message for 5 seconds
   };
   
   // Load object names from vwa_info.json
@@ -66,23 +61,6 @@ export function VWATab() {
         VWA (Virtual World Asset)
       </h2>
       
-      {/* Feedback message */}
-      {feedback && (
-        <div
-          style={{
-            backgroundColor:
-              feedback.type === "success" ? "#4CAF50" :
-              feedback.type === "error" ? "#F44336" : "#2196F3",
-            color: "white",
-            padding: "10px 15px",
-            borderRadius: "4px",
-            marginBottom: "15px",
-            fontSize: "1rem",
-          }}
-        >
-          {feedback.message}
-        </div>
-      )}
       
       <div
         style={{
@@ -107,7 +85,26 @@ export function VWATab() {
           gap: "15px",
         }}
       >
-        {objectNames.length > 0 ? (
+        {!syncStatus.isLive ? (
+          <div style={{ textAlign: "center", width: "100%", padding: "20px" }}>
+            <p>Syncing blockchain data: {syncStatus.percentage}%</p>
+            <div style={{
+              width: "100%",
+              height: "10px",
+              backgroundColor: "#555555",
+              borderRadius: "5px",
+              overflow: "hidden",
+              marginTop: "10px"
+            }}>
+              <div style={{
+                width: `${syncStatus.percentage}%`,
+                height: "100%",
+                backgroundColor: "#5555FF",
+                borderRadius: "5px"
+              }}></div>
+            </div>
+          </div>
+        ) : objectNames.length > 0 ? (
           objectNames.map((name) => (
             <ObjectCard key={name} objectName={name} showFeedback={showFeedback} />
           ))

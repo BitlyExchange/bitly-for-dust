@@ -1,7 +1,9 @@
 import { useState, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { usePlayerPositionQuery } from "../common/usePlayerPositionQuery";
 import { connectDustClient } from "dustkit/internal";
 import { encodeBlock, objects, Vec3 } from "@dust/world/internal";
+import { Button, InputNumber } from "antd";
 import { usePlayerInventory } from "../common/usePlayerInventory";
 import { InteractWithChest } from "../common/InteractWithChest";
 import { useTokenBalance } from "../common/useTokenBalance";
@@ -142,6 +144,7 @@ export function ObjectCard({ objectName, showFeedback = () => {} }: ObjectCardPr
   const [amount, setAmount] = useState<string>("0");
   const [maxAmount, setMaxAmount] = useState<string>("Loading...");
   const [isAmountValid, setIsAmountValid] = useState<boolean>(false);
+  const [loading, setLoading] = useState<boolean>(false);
 
   // Get the query client for invalidating queries
   const queryClient = useQueryClient();
@@ -262,32 +265,53 @@ export function ObjectCard({ objectName, showFeedback = () => {} }: ObjectCardPr
     const numMaxAmount = parseInt(maxAmount);
     
     // Amount is valid if it's a positive integer and doesn't exceed maxAmount
+    // This controls when the Confirm button is enabled/disabled
     const valid = numValue > 0 && numValue <= numMaxAmount;
     setIsAmountValid(valid);
   };
 
   // Handle amount change
-  const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    
-    // Only allow numbers
-    if (/^\d*$/.test(value)) {
-      setAmount(value);
-      validateAmount(value);
-    }
+  const handleAmountChange = (value: number | null) => {
+    const stringValue = value?.toString() || "0";
+    setAmount(stringValue);
+    validateAmount(stringValue);
   };
+
+  // Check if player is at standing point (exact position match)
+  const isPlayerAtStandingPoint = (playerPos: { x: number; y: number; z: number }, standingPoint: Vec3): boolean => {
+    return (
+      playerPos.x === standingPoint[0] &&
+      playerPos.y === standingPoint[1] &&
+      playerPos.z === standingPoint[2]
+    );
+  };
+
+  // Get player's current position
+  const playerPositionQuery = usePlayerPositionQuery();
 
   // Handle confirm button click
   const handleConfirm = async () => {
+    setLoading(true);
     try {
       if (!dustClient.data) {
         showFeedback("Dust client not connected", "error");
+        setLoading(false);
         return;
       }
 
       if (!objectInfo || !objectInfo.coordinate || objectInfo.coordinate.length === 0) {
         showFeedback("Object coordinates not available", "error");
+        setLoading(false);
         return;
+      }
+      
+      // Check if player is at the standing point
+      if (playerPositionQuery.data && objectInfo.standingpoint) {
+        if (!isPlayerAtStandingPoint(playerPositionQuery.data, objectInfo.standingpoint)) {
+          showFeedback("You need to be exactly at the standing point to perform this action", "error");
+          setLoading(false);
+          return;
+        }
       }
 
       // Get player entity ID
@@ -295,6 +319,7 @@ export function ObjectCard({ objectName, showFeedback = () => {} }: ObjectCardPr
       
       if (!playerEntityId) {
         showFeedback("Player entity ID not available", "error");
+        setLoading(false);
         return;
       }
 
@@ -302,6 +327,7 @@ export function ObjectCard({ objectName, showFeedback = () => {} }: ObjectCardPr
       const objectTypeId = (objects.find(e => e.name === objectName))?.id;
       if (!objectTypeId) {
         showFeedback(`Object type ${objectName} not found`, "error");
+        setLoading(false);
         return;
       }
 
@@ -334,12 +360,14 @@ export function ObjectCard({ objectName, showFeedback = () => {} }: ObjectCardPr
         "success"
       );
       
+      setLoading(false);
     } catch (error: any) {
       console.error("Transfer error:", error);
       showFeedback(
         `Failed to ${option === "tokenize" ? "tokenize" : "claim"} ${objectName}: ${error.message || "Unknown error"}`,
         "error"
       );
+      setLoading(false);
     }
   };
 
@@ -408,13 +436,18 @@ export function ObjectCard({ objectName, showFeedback = () => {} }: ObjectCardPr
       {/* Amount input and max amount display */}
       <div style={STYLES.inputRow}>
         <label style={STYLES.inputLabel}>Amount:</label>
-        <input
-          type="text"
-          value={amount}
+        <InputNumber
+          value={parseInt(amount) || 0}
           onChange={handleAmountChange}
-          style={STYLES.input}
-          min="0"
-          max={maxAmount !== "Loading..." ? maxAmount : undefined}
+          style={{ ...STYLES.input, width: '100%' }}
+          min={0}
+          max={maxAmount !== "Loading..." ? parseInt(maxAmount) : undefined}
+          controls
+          keyboard
+          precision={0}
+          step={1}
+          stringMode={false}
+          disabled={loading || maxAmount === "Loading..."}
         />
         <div style={STYLES.maxAmount}>
           Max: {maxAmount}
@@ -422,17 +455,18 @@ export function ObjectCard({ objectName, showFeedback = () => {} }: ObjectCardPr
       </div>
 
       {/* Confirm button */}
-      <button
+      <Button
+        type="primary"
+        danger
         onClick={handleConfirm}
         style={{
           ...STYLES.confirmButton,
-          opacity: isAmountValid ? 1 : 0.5,
-          cursor: isAmountValid ? "pointer" : "not-allowed",
         }}
         disabled={!isAmountValid}
+        loading={loading}
       >
         Confirm
-      </button>
+      </Button>
     </div>
   );
 }
