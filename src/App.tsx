@@ -40,7 +40,7 @@ export function App() {
           backgroundClip: "text",
         }}
       >
-        Bitly City
+        Bitly
       </h1>
 
       {/* Description */}
@@ -53,7 +53,7 @@ export function App() {
           textShadow: "1px 1px 0px #000000",
         }}
       >
-        Control Panel for Bitly City & Exchange
+        Control Panel for City & Exchange
       </p>
 
       {/* Tab Navigation */}
@@ -85,6 +85,25 @@ export function App() {
           }}
         >
           City Details
+        </button>
+        <button
+          onClick={() => setActiveTab("exchange")}
+          style={{
+            padding: "10px 20px",
+            backgroundColor: activeTab === "exchange" ? "#55AAFF" : "#333333",
+            color: activeTab === "exchange" ? "#000000" : "#FFFFFF",
+            border: "2px solid #555555",
+            borderBottom: activeTab === "exchange" ? "2px solid #55AAFF" : "none",
+            borderRadius: "8px 8px 0 0",
+            cursor: "pointer",
+            fontFamily: "'Minecraft', monospace",
+            fontSize: "1rem",
+            fontWeight: "bold",
+            textShadow: activeTab === "exchange" ? "none" : "1px 1px 0px #000000",
+            transition: "all 0.2s ease",
+          }}
+        >
+          Exchange
         </button>
         <button
           onClick={() => setActiveTab("vwa")}
@@ -123,25 +142,6 @@ export function App() {
           }}
         >
           News
-        </button>
-        <button
-          onClick={() => setActiveTab("exchange")}
-          style={{
-            padding: "10px 20px",
-            backgroundColor: activeTab === "exchange" ? "#55AAFF" : "#333333",
-            color: activeTab === "exchange" ? "#000000" : "#FFFFFF",
-            border: "2px solid #555555",
-            borderBottom: activeTab === "exchange" ? "2px solid #55AAFF" : "none",
-            borderRadius: "8px 8px 0 0",
-            cursor: "pointer",
-            fontFamily: "'Minecraft', monospace",
-            fontSize: "1rem",
-            fontWeight: "bold",
-            textShadow: activeTab === "exchange" ? "none" : "1px 1px 0px #000000",
-            transition: "all 0.2s ease",
-          }}
-        >
-          Exchange
         </button>
         <button
           onClick={() => setActiveTab("references")}

@@ -61,21 +61,6 @@ export function VWATab() {
         VWA (Virtual World Asset)
       </h2>
       
-      
-      <div
-        style={{
-          backgroundColor: "#2A2A2A",
-          padding: "15px",
-          borderRadius: "4px",
-          border: "2px solid #555555",
-          marginBottom: "20px",
-        }}
-      >
-        <p style={{ fontSize: "1.1rem", marginBottom: "10px" }}>
-          Welcome to the VWA tab. Here you can interact with Virtual World Assets.
-        </p>
-      </div>
-      
       {/* Cards container with flex layout - 2 cards per row */}
       <div
         style={{

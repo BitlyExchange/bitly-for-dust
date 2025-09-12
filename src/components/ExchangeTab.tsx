@@ -100,15 +100,15 @@ export function ExchangeTab() {
             padding: "8px 16px",
             background: "none",
             border: "none",
-            color: activeTab === "unknown" ? "#55FF55" : "#AAAAAA",
-            borderBottom: activeTab === "unknown" ? "2px solid #55FF55" : "none",
+            color: activeTab === "vwaTokens" ? "#55FF55" : "#AAAAAA",
+            borderBottom: activeTab === "vwaTokens" ? "2px solid #55FF55" : "none",
             fontFamily: "'Minecraft', monospace",
             fontSize: "1rem",
             cursor: "pointer",
           }}
-          onClick={() => setActiveTab("unknown")}
+          onClick={() => setActiveTab("vwaTokens")}
         >
-          ???(Comming Soon)
+          VWA Tokens
         </button>
       </div>
 
@@ -172,9 +172,62 @@ export function ExchangeTab() {
             </div>
           </div>
         )}
-        {activeTab === "unknown" && (
-          <div style={{ padding: "20px" }}>
-            {/* Empty content for now */}
+        {activeTab === "vwaTokens" && (
+          <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
+            {/* Highlighted Note */}
+            <div style={{
+              backgroundColor: "#4A4A4A",
+              border: "2px solid #FFCC00",
+              borderRadius: "4px",
+              padding: "10px",
+              marginBottom: "15px",
+              display: "flex",
+              alignItems: "center"
+            }}>
+              <span style={{ marginRight: "10px", color: "#FFCC00", fontWeight: "bold" }}>Note:</span>
+              <span>
+                You can also choose to click {" "}
+                <a
+                  href="https://token.bitly.exchange/dashboard/markets?networkId=690&marketName=dust_vwa"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    color: "#5DADE2",
+                    textDecoration: "none",
+                  }}
+                  onMouseOver={(e) => e.currentTarget.style.textDecoration = "underline"}
+                  onMouseOut={(e) => e.currentTarget.style.textDecoration = "none"}
+                >
+                  this link
+                </a>
+                {" "} to trade
+              </span>
+            </div>
+            <div style={{
+              flex: 1,
+              border: "2px solid #555555",
+              borderRadius: "4px",
+              height: iframeHeight,
+              overflow: "hidden"
+            }}>
+              <iframe
+                src="https://verify.walletconnect.com/"
+                style={{
+                  width: "0px",
+                  height: "0px",
+                  border: "none"
+                }}
+              />
+              <iframe
+                src="https://token.bitly.exchange/dashboard/markets?networkId=690&marketName=dust_vwa"
+                style={{
+                  width: "100%",
+                  height:"700px",
+                  border: "none"
+                }}
+                title="VWA Tokens Dashboard"
+              />
+            </div>
           </div>
         )}
       </div>
