@@ -1,14 +1,15 @@
 import { useState, useEffect, useRef } from "react";
-import { encodeBlock } from "@dust/world/internal";
+import {
+  fetchForceFieldData,
+  calculateUpdatedEnergy,
+  calculateProtectionTime,
+  type ForceFieldData,
+  type ForceFieldCoordinates
+} from "../common/forceFieldEnergy";
 
 export function ForceFieldInfoSection() {
   // ForceField data state
-  const [forceFieldData, setForceFieldData] = useState<{
-    energy: number | null;
-    fragmentCount: number | null;
-    loading: boolean;
-    error: string | null;
-  }>({
+  const [forceFieldData, setForceFieldData] = useState<ForceFieldData>({
     energy: null,
     fragmentCount: null,
     loading: true,
@@ -22,93 +23,21 @@ export function ForceFieldInfoSection() {
   const lastUpdateTimeRef = useRef<number>(Date.now());
 
   // ForceField coordinates
-  const forceFieldCoordinates: [number, number, number] = [226, 71, -2680];
+  const forceFieldCoordinates: ForceFieldCoordinates = [226, 71, -2680];
 
   // Fetch ForceField data
   useEffect(() => {
-    const fetchForceFieldData = async () => {
+    const loadForceFieldData = async () => {
       try {
         setForceFieldData(prev => ({ ...prev, loading: true, error: null }));
         
-        // Convert coordinates to entityId
-        const entityId = encodeBlock(forceFieldCoordinates);
+        // Fetch force field data using the abstracted function
+        const data = await fetchForceFieldData(forceFieldCoordinates);
         
-        // Query for energy data
-        const energyQuery = `SELECT "energy" FROM "Energy" WHERE "entityId" = '${entityId}' LIMIT 1`;
-        
-        const energyResponse = await fetch(
-          "https://indexer.mud.redstonechain.com/q",
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify([
-              {
-                query: energyQuery,
-                address: "0x253eb85B3C953bFE3827CC14a151262482E7189C",
-              },
-            ]),
-          }
-        );
-        
-        let energy = null;
-        if (energyResponse.ok) {
-          const energyData = await energyResponse.json();
-          const energyResult = Array.isArray(energyData) ? energyData[0] : energyData;
-          
-          if (
-            energyResult.result &&
-            energyResult.result.length > 0 &&
-            energyResult.result[0] &&
-            energyResult.result[0].length > 1
-          ) {
-            // Get energy value and convert to number
-            const energyValue = energyResult.result[0][1][0];
-            energy = Number(energyValue) / (10 ** 14);
-          }
-        }
-        
-        // Query for fragment count
-        const fragmentQuery = `SELECT COUNT(*) FROM "Fragment" WHERE "forceField" = '${entityId}'`;
-        
-        const fragmentResponse = await fetch(
-          "https://indexer.mud.redstonechain.com/q",
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify([
-              {
-                query: fragmentQuery,
-                address: "0x253eb85B3C953bFE3827CC14a151262482E7189C",
-              },
-            ]),
-          }
-        );
-        
-        let fragmentCount = null;
-        if (fragmentResponse.ok) {
-          const fragmentData = await fragmentResponse.json();
-          const fragmentResult = Array.isArray(fragmentData) ? fragmentData[0] : fragmentData;
-          
-          if (
-            fragmentResult.result &&
-            fragmentResult.result.length > 0 &&
-            fragmentResult.result[0] &&
-            fragmentResult.result[0].length > 1
-          ) {
-            // Get fragment count
-            fragmentCount = Number(fragmentResult.result[0][1][0]);
-          }
-        }
-        
-        setForceFieldData({
-          energy,
-          fragmentCount,
-          loading: false,
-          error: null
-        });
+        setForceFieldData(data);
         
         // Initialize current energy
-        setCurrentEnergy(energy);
+        setCurrentEnergy(data.energy);
         lastUpdateTimeRef.current = Date.now();
       } catch (error) {
         console.error("Error fetching ForceField data:", error);
@@ -121,29 +50,22 @@ export function ForceFieldInfoSection() {
       }
     };
     
-    fetchForceFieldData();
+    loadForceFieldData();
     
     // Set up interval to update energy consumption
     const intervalId = setInterval(() => {
       setCurrentEnergy(prevEnergy => {
         if (prevEnergy === null || forceFieldData.fragmentCount === null) return prevEnergy;
         
-        // Calculate energy consumption rate (energy units per day)
-        const dailyConsumption = 8 * forceFieldData.fragmentCount;
-        
-        // Calculate time elapsed since last update (in days)
+        // Calculate time elapsed since last update
         const now = Date.now();
         const elapsedMs = now - lastUpdateTimeRef.current;
-        const elapsedDays = elapsedMs / (1000 * 60 * 60 * 24);
         
         // Update last update time
         lastUpdateTimeRef.current = now;
         
-        // Calculate new energy value
-        const consumedEnergy = dailyConsumption * elapsedDays;
-        const newEnergy = Math.max(0, prevEnergy - consumedEnergy);
-        
-        return newEnergy;
+        // Calculate new energy value using the abstracted function
+        return calculateUpdatedEnergy(prevEnergy, forceFieldData.fragmentCount, elapsedMs);
       });
     }, 1000); // Update every second
     
@@ -302,32 +224,7 @@ export function ForceFieldInfoSection() {
                     color: "#55FFFF",
                     borderBottom: "1px solid #333333"
                   }}>
-                    {(() => {
-                      // Calculate daily consumption based on fragment count (8 per fragment)
-                      const dailyConsumption = 8 * forceFieldData.fragmentCount;
-                      
-                      // If there are no fragments, show infinite duration
-                      if (dailyConsumption === 0) return "∞ (no fragments)";
-                      
-                      const totalDays = currentEnergy / dailyConsumption;
-                      const days = Math.floor(totalDays);
-                      const hours = Math.floor((totalDays - days) * 24);
-                      const minutes = Math.floor(((totalDays - days) * 24 - hours) * 60);
-                      
-                      if (days > 0) {
-                        return hours > 0
-                          ? `${days} days ${hours} hours`
-                          : `${days} days`;
-                      } else if (hours > 0) {
-                        return minutes > 0
-                          ? `${hours} hours ${minutes} minutes`
-                          : `${hours} hours`;
-                      } else if (minutes > 0) {
-                        return `${minutes} minutes`;
-                      } else {
-                        return "Less than 1 minute";
-                      }
-                    })()}
+                    {calculateProtectionTime(currentEnergy, forceFieldData.fragmentCount)}
                   </td>
                 </tr>
               )}

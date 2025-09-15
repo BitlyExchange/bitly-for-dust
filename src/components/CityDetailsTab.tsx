@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { CoordinatesSection } from "./CoordinatesSection";
+import { SpawnSection } from "./SpawnSection";
 import { ForceFieldInfoSection } from "./ForceFieldInfoSection";
 
 export function CityDetailsTab() {
@@ -57,6 +58,7 @@ export function CityDetailsTab() {
       </h2>
       
       <CoordinatesSection showFeedback={showFeedback} />
+      <SpawnSection />
       <ForceFieldInfoSection />
 
       {/* Feedback Display */}
