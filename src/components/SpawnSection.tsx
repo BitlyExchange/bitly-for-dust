@@ -21,7 +21,7 @@ export const MAX_PLAYER_ENERGY = 8176;
 const forceFieldCoordinates: [number, number, number] = [226, 71, -2680];
 
 // BETToken address
-const BET_TOKEN_CONTRACT_ADDRESS = "0xC5E54e801648EBd7241C00A5a9792A047fB3c7d8";
+const BET_TOKEN_CONTRACT_ADDRESS = "0x9e9dDaEc378d9202f31685472Feb32c488De3313";
 
 export function SpawnSection() {
   const { data: dustClient } = useDustClient();
@@ -139,6 +139,8 @@ export function SpawnSection() {
       // Convert percentage to decimal (0-1 range)
       const energyPercentDecimal = spawnEnergyPercent / 100;
       
+      console.log("ww: param: ", energyPercentDecimal, SPAWN_TILE, playerEntityId, dustClient);
+
       await spawnPlayer(
         energyPercentDecimal,
         SPAWN_TILE,

@@ -1,4 +1,4 @@
-import { encodeBlock, Vec3 } from "@dust/world/internal";
+import { encodeBlock, packVec3, Vec3 } from "@dust/world/internal";
 import { resourceToHex } from "@latticexyz/common";
 import SpawnSystemABI from "@dust/world/out/SpawnSystem.sol/SpawnSystem.abi";
 import { getSlotsWithObject, getAllSlots } from "./usePlayerInventory";
@@ -35,7 +35,7 @@ export async function spawnPlayer(
     throw new Error("Player entity ID not available");
   }
 
-  const spawnEnergy = BigInt(BigInt(energyPercent) * MAX_PLAYER_ENERGY);
+  const spawnEnergy = BigInt(BigInt((energyPercent * 100).toFixed()) * MAX_PLAYER_ENERGY) / 100n;
 
   // Call the transfer function
   await dustClient.provider.request({
@@ -50,10 +50,10 @@ export async function spawnPlayer(
         abi: SpawnSystemABI,
         functionName: "spawn",
         args: [
-          spawnTile, // caller
-          [spawnTile[0], spawnTile[1]+1, spawnTile[2]],
+          encodeBlock(spawnTile),
+          packVec3([spawnTile[0], spawnTile[1]+1, spawnTile[2]]),
           spawnEnergy,
-          "0x" // extraData (empty)
+          "0x00" // extraData (empty)
         ],
       },
     ],
