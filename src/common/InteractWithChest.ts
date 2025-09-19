@@ -3,6 +3,12 @@ import { resourceToHex } from "@latticexyz/common";
 import TransferSystemABI from "@dust/world/out/TransferSystem.sol/TransferSystem.abi";
 import { getSlotsWithObject, getAllSlots } from "./usePlayerInventory";
 import { Hex } from "viem";
+import { objects } from "@dust/world/internal";
+
+// Constants for inventory slots
+const MAX_PLAYER_INVENTORY_SLOTS = 36;
+const MAX_CHEST_INVENTORY_SLOTS = 27;
+const MAX_STACK_SIZE = 99;
 
 /**
  * Interacts with a chest to tokenize or claim items
@@ -38,112 +44,133 @@ export async function InteractWithChest(
   const chestCoordinates = chests[0]; // Use the first coordinate
   const chestEntityId = encodeBlock(chestCoordinates as [number, number, number]);
 
-  // Prepare transfer parameters based on action
-  let fromEntityId, toEntityId, transfers;
+  // Map the action to the new terminology
+  // "tokenize" means moving from player to chest (deposit)
+  // "claim" means moving from chest to player (withdraw)
+  const mappedAction = action === "tokenize" ? "deposit" : "withdraw";
 
-  if (action === "tokenize") {
-    // For tokenize: transfer from player to chest
-    fromEntityId = playerEntityId;
-    toEntityId = chestEntityId;
-    
-    // Find slots containing this object
-    const slots = getSlotsWithObject(playerEntityId, objectType);
-    if (slots.length === 0) {
-      throw new Error(`No object found in inventory`);
-    }
-    
-    // Find a suitable slot in the chest
-    const chestSlots = getAllSlots(chestEntityId as `0x${string}`);
-    const MAX_STACK_SIZE = 99;
-    
-    // First try to find a slot with the same object type that has space
-    let targetSlot = -1;
-    
-    // Look for a slot with the same object type that isn't full
-    for (const slot of chestSlots) {
-      if (slot.objectType === objectType && slot.amount < MAX_STACK_SIZE) {
-        // Check if there's enough space in this slot
-        if (slot.amount + amount <= MAX_STACK_SIZE) {
-          targetSlot = slot.slot;
-          break;
-        }
-      }
-    }
-    
-    // If no suitable slot with the same object type was found, look for an empty slot
-    if (targetSlot === -1) {
-      // Create a set of occupied slots for faster lookup
-      const occupiedSlots = new Set(chestSlots.map(slot => slot.slot));
-      
-      // Find the first empty slot
-      for (let i = 0; i < 36; i++) {  // 36 is MAX_PLAYER_INVENTORY_SLOTS
-        if (!occupiedSlots.has(i)) {
-          targetSlot = i;
-          break;
-        }
-      }
-    }
-    
-    // If still no slot found, use slot 0 as fallback
-    if (targetSlot === -1) {
-      targetSlot = 0;
-    }
-    
-    // Prepare transfers array
-    transfers = [{
-      slotFrom: slots[0].slot, // Use the first slot that has the object
-      slotTo: targetSlot, // Target slot in chest
-      amount: amount
-    }];
-  } else {
-    // For claim: transfer from chest to player
-    fromEntityId = chestEntityId;
-    toEntityId = playerEntityId;
-    
-    // Find a suitable slot in player's inventory
-    const allSlots = getAllSlots(playerEntityId as `0x${string}`);
-    const MAX_STACK_SIZE = 99;
-    
-    // First try to find a slot with the same object type that has space
-    let targetSlot = -1;
-    
-    // Look for a slot with the same object type that isn't full
-    for (const slot of allSlots) {
-      if (slot.objectType === objectType && slot.amount < MAX_STACK_SIZE) {
-        // Check if there's enough space in this slot
-        if (slot.amount + amount <= MAX_STACK_SIZE) {
-          targetSlot = slot.slot;
-          break;
-        }
-      }
-    }
-    
-    // If no suitable slot with the same object type was found, look for an empty slot
-    if (targetSlot === -1) {
-      // Create a set of occupied slots for faster lookup
-      const occupiedSlots = new Set(allSlots.map(slot => slot.slot));
-      
-      // Find the first empty slot
-      for (let i = 0; i < 36; i++) {  // 36 is MAX_PLAYER_INVENTORY_SLOTS
-        if (!occupiedSlots.has(i)) {
-          targetSlot = i;
-          break;
-        }
-      }
-    }
-    
-    // If still no slot found, show error
-    if (targetSlot === -1) {
-      throw new Error("No available inventory slots");
-    }
-    
-    // Prepare transfers array
-    transfers = [{
-      slotFrom: 0, // Source slot in chest
-      slotTo: targetSlot, // Target slot in player inventory
-      amount: amount
-    }];
+  // Determine source and target based on action
+  const sourceId = mappedAction === "withdraw" ? chestEntityId : playerEntityId;
+  const targetId = mappedAction === "withdraw" ? playerEntityId : chestEntityId;
+
+  // Find slots with the specified object in the source
+  const sourceSlots = getSlotsWithObject(sourceId, objectType);
+
+  if (sourceSlots.length === 0) {
+    throw new Error(`No object found in ${mappedAction === "withdraw" ? "chest" : "inventory"}`);
   }
+
+  // Calculate total available items in source slots
+  const totalAvailableItems = sourceSlots.reduce((total, slot) => total + slot.amount, 0);
+
+  // Limit the amount to transfer based on available source items
+  const actualAmount = Math.min(amount, totalAvailableItems);
+
+  // Get all slots in the target to find empty slots and slots with the same object
+  const targetSlots = getAllSlots(targetId);
+
+  // Find empty slots in the target
+  const occupiedSlotNumbers = new Set(targetSlots.map(slot => slot.slot));
+  const emptySlots: number[] = [];
+
+  // Find slots with the same object that aren't full
+  const targetSlotsWithSameObject = targetSlots.filter(
+    slot => slot.objectType === objectType && slot.amount < MAX_STACK_SIZE
+  );
+
+  // Determine which max slots to use based on the target
+  const maxSlots = targetId === chestEntityId ? MAX_CHEST_INVENTORY_SLOTS : MAX_PLAYER_INVENTORY_SLOTS;
+
+  // Find empty slots using the appropriate max slots constant
+  for (let i = 0; i < maxSlots; i++) {
+    if (!occupiedSlotNumbers.has(i)) {
+      emptySlots.push(i);
+    }
+  }
+
+  // Calculate how many items we can transfer to existing slots with the same object
+  let remainingToTransfer = actualAmount;
+  const transfers: { slotFrom: number; slotTo: number; amount: number }[] = [];
+
+  // First try to fill existing slots with the same object
+  if (targetSlotsWithSameObject.length > 0) {
+    // Create a copy of target slots to track remaining space
+    const targetSlotSpaces = targetSlotsWithSameObject.map(slot => ({
+      slot: slot.slot,
+      spaceAvailable: MAX_STACK_SIZE - slot.amount
+    }));
+
+    for (const sourceSlot of sourceSlots) {
+      if (remainingToTransfer <= 0 || sourceSlot.amount <= 0) break;
+
+      // Sort target slots by available space (descending) to fill fullest slots first
+      targetSlotSpaces.sort((a, b) => b.spaceAvailable - a.spaceAvailable);
+
+      for (const targetSlotSpace of targetSlotSpaces) {
+        if (remainingToTransfer <= 0 || sourceSlot.amount <= 0 || targetSlotSpace.spaceAvailable <= 0) break;
+
+        const amountToTransfer = Math.min(remainingToTransfer, sourceSlot.amount, targetSlotSpace.spaceAvailable);
+        if (amountToTransfer <= 0) continue;
+
+        transfers.push({
+          slotFrom: sourceSlot.slot,
+          slotTo: targetSlotSpace.slot,
+          amount: amountToTransfer
+        });
+
+        // Update tracking variables
+        remainingToTransfer -= amountToTransfer;
+        sourceSlot.amount -= amountToTransfer;
+        targetSlotSpace.spaceAvailable -= amountToTransfer;
+      }
+    }
+  }
+
+  // Then use empty slots for remaining items
+  if (remainingToTransfer > 0 && emptySlots.length > 0) {
+    // Create a data structure to track the remaining capacity of each empty slot
+    const emptySlotSpaces = emptySlots.map(slot => ({
+      slot,
+      spaceAvailable: MAX_STACK_SIZE
+    }));
+
+    for (const sourceSlot of sourceSlots) {
+      if (remainingToTransfer <= 0 || emptySlotSpaces.length === 0) break;
+      if (sourceSlot.amount <= 0) continue; // Skip empty source slots
+
+      // Sort empty slots by available space (descending) to fill fullest slots first
+      emptySlotSpaces.sort((a, b) => b.spaceAvailable - a.spaceAvailable);
+
+      // Get the current empty slot with the most space
+      const currentEmptySlot = emptySlotSpaces[0];
+      if (!currentEmptySlot || currentEmptySlot.spaceAvailable <= 0) break;
+
+      const amountToTransfer = Math.min(remainingToTransfer, sourceSlot.amount, currentEmptySlot.spaceAvailable);
+      if (amountToTransfer <= 0) continue;
+
+      transfers.push({
+        slotFrom: sourceSlot.slot,
+        slotTo: currentEmptySlot.slot,
+        amount: amountToTransfer
+      });
+
+      // Update tracking variables
+      remainingToTransfer -= amountToTransfer;
+      sourceSlot.amount -= amountToTransfer;
+      currentEmptySlot.spaceAvailable -= amountToTransfer;
+
+      // Remove slots that are now full
+      if (currentEmptySlot.spaceAvailable <= 0) {
+        emptySlotSpaces.shift(); // Remove the first slot which we just filled
+      }
+    }
+  }
+
+  if (transfers.length === 0) {
+    throw new Error(`No available slots in ${mappedAction === "withdraw" ? "inventory" : "chest"}`);
+  }
+
+  console.log(`ww: Transfers: ${JSON.stringify(transfers)}`);
 
   // Call the transfer function
   await dustClient.provider.request({
@@ -159,12 +186,16 @@ export async function InteractWithChest(
         functionName: "transfer",
         args: [
           playerEntityId, // caller
-          fromEntityId, // from
-          toEntityId, // to
+          sourceId, // from
+          targetId, // to
           transfers, // transfers array
           "0x" // extraData (empty)
         ],
       },
     ],
   });
+
+  // Calculate total items transferred
+  const totalTransferred = transfers.reduce((total, transfer) => total + transfer.amount, 0);
+  console.log(`Successfully ${action === "claim" ? "claimed" : "tokenized"} ${totalTransferred} items`);
 }

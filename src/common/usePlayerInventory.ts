@@ -37,7 +37,8 @@ export function usePlayerInventory(objectName: string) {
       // Calculate total quantity across all slots
       const totalQuantity = slots.reduce((sum, slot) => sum + slot.amount, 0);
       return totalQuantity;
-    }
+    },
+    staleTime: 1000,
   });
 
   return inventoryQuery;

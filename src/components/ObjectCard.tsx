@@ -347,7 +347,7 @@ export function ObjectCard({ objectName, showFeedback = () => {} }: ObjectCardPr
       setAmount("0");
 
       // Wait 2sec
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      await new Promise(resolve => setTimeout(resolve, 4000));
       
       // Invalidate player inventory query to refresh inventory count
       queryClient.invalidateQueries({ queryKey: ["player-inventory", playerEntityId, objectName] });
