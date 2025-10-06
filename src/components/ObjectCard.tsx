@@ -111,7 +111,7 @@ const STYLES = {
   },
   input: {
     padding: "4px 6px",
-    backgroundColor: "#333333",
+    backgroundColor: "#FFFFFF",
     color: "white",
     border: "1px solid #555555",
     borderRadius: "4px",
@@ -140,7 +140,7 @@ const STYLES = {
 export function ObjectCard({ objectName, showFeedback = () => {} }: ObjectCardProps) {
   // State for the component
   const [objectInfo, setObjectInfo] = useState<ObjectInfo | null>(null);
-  const [option, setOption] = useState<"tokenize" | "claim">("tokenize");
+  const [option, setOption] = useState<"tokenize" | "claim">("claim");
   const [amount, setAmount] = useState<string>("0");
   const [maxAmount, setMaxAmount] = useState<string>("Loading...");
   const [isAmountValid, setIsAmountValid] = useState<boolean>(false);
@@ -415,20 +415,20 @@ export function ObjectCard({ objectName, showFeedback = () => {} }: ObjectCardPr
           <button
             style={{
               ...STYLES.optionButton,
-              ...(option === "tokenize" ? STYLES.optionButtonActive : {}),
-            }}
-            onClick={() => setOption("tokenize")}
-          >
-            Tokenize
-          </button>
-          <button
-            style={{
-              ...STYLES.optionButton,
               ...(option === "claim" ? STYLES.optionButtonActive : {}),
             }}
             onClick={() => setOption("claim")}
           >
             Claim
+          </button>
+          <button
+            style={{
+              ...STYLES.optionButton,
+              ...(option === "tokenize" ? STYLES.optionButtonActive : {}),
+            }}
+            onClick={() => setOption("tokenize")}
+          >
+            Tokenize
           </button>
         </div>
       </div>

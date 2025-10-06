@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { message, Collapse } from "antd";
+import { message } from "antd";
 import { ObjectCard } from "./ObjectCard";
 import { useSyncStatus } from "../mud/useSyncStatus";
 
@@ -61,8 +61,8 @@ export function VWATab() {
         VWA (Virtual World Asset)
       </h2>
       
-      {/* Instructions collapsible section */}
-      <Collapse
+      {/* Instructions section */}
+      <div
         style={{
           marginBottom: "20px",
           backgroundColor: "#3E3E3E",
@@ -70,36 +70,30 @@ export function VWATab() {
           borderRadius: "8px",
           boxShadow: "0 0 10px rgba(0, 0, 0, 0.5)",
           fontFamily: "'Minecraft', monospace",
+          padding: "15px",
         }}
-        className="minecraft-theme"
-        bordered={false}
-        expandIconPosition="end"
-        items={[
-          {
-            key: '1',
-            label: <span style={{
-              color: "#5555FF",
-              textShadow: "1px 1px #3F3F3F",
-              fontWeight: "bold"
-            }}>Instructions</span>,
-            children: (
-              <div style={{
-                backgroundColor: "#4E4E4E",
-                borderRadius: "4px",
-                padding: "15px",
-                margin: "0",
-                color: "#FFFFFF",
-              }}>
-                <p style={{ margin: 0 }}>
-                  Please standing at <code style={{ backgroundColor: "#555555", padding: "2px 5px", borderRadius: "3px" }}>Standing Point</code> and then tokenize/claim the items in this card。
-                </p>
-              </div>
-            ),
-            style: { backgroundColor: "#4E4E4E", border: "none" },
-            className: "custom-panel",
-          },
-        ]}
-      />
+      >
+        <h3 style={{
+          color: "#5555FF",
+          textShadow: "1px 1px #3F3F3F",
+          fontWeight: "bold",
+          marginTop: 0,
+          marginBottom: "10px"
+        }}>
+          Instructions
+        </h3>
+        <div style={{
+          backgroundColor: "#4E4E4E",
+          borderRadius: "4px",
+          padding: "15px",
+          margin: "0",
+          color: "#FFFFFF",
+        }}>
+          <p style={{ margin: 0 }}>
+            Stand on red block (Mushroom) at Standing Point and then tokenize/claim
+          </p>
+        </div>
+      </div>
       
       {/* Cards container with flex layout - 2 cards per row */}
       <div
