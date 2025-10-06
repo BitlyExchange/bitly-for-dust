@@ -450,7 +450,7 @@ export function ObjectCard({ objectName, showFeedback = () => {} }: ObjectCardPr
           disabled={loading || maxAmount === "Loading..."}
         />
         <div style={STYLES.maxAmount}>
-          Max: {maxAmount}
+          Max: {Number(maxAmount).toFixed(0)} 
         </div>
       </div>
 
