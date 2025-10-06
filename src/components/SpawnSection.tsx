@@ -358,7 +358,7 @@ export function SpawnSection() {
                         {costAmount.toFixed(2)}
                       </div>
                       <Text style={{ color: "#999999", fontSize: "0.8rem" }}>
-                        Tokens required
+                        $BET required
                       </Text>
                     </div>
                   </Col>
@@ -377,7 +377,7 @@ export function SpawnSection() {
                         marginBottom: "8px",
                         fontSize: "0.9rem"
                       }}>
-                        Your Balance
+                        Your Balance ($BET)
                       </Text>
                       <div style={{
                         fontSize: "1.6rem",
@@ -428,7 +428,7 @@ export function SpawnSection() {
                     color: "#ff4d4f",
                     fontSize: "0.9rem"
                   }}>
-                    Insufficient token balance to spawn
+                    Insufficient $BET balance to spawn
                   </div>
                 )}
               </Card>
