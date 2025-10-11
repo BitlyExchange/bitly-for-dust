@@ -34,5 +34,41 @@
         "contract": "0x3e5dc90978de16e067d303c7c9c68d155c447b46",
         "coordinate": [[379, 72, -2514]],
         "standingpoint": [379, 72, -2513]
+    },
+    "WheatSlop": {
+        "icon": "https://alpha.dustproject.org/api/assets/objects/32790/icon",
+        "contract": "0x433C527B8cF2060C18bb5A9eaF42B8c498F08173",
+        "coordinate": [[329, 73, -2524]],
+        "standingpoint": [329, 73, -2523]
+    },
+    "PumpkinSoup": {
+        "icon": "https://alpha.dustproject.org/api/assets/objects/32791/icon",
+        "contract": "0x863fED823200307D315feC949dd48F5b045bfB12",
+        "coordinate": [[339, 73, -2524]],
+        "standingpoint": [339, 73, -2523]
+    },
+    "MelonSmoothie": {
+        "icon": "https://alpha.dustproject.org/api/assets/objects/32792/icon",
+        "contract": "0x88e5435FBE88C7Bff7c306A26913b8D3b085b307",
+        "coordinate": [[349, 73, -2524]],
+        "standingpoint": [349, 73, -2523]
+    },
+    "SakuraLeaf": {
+        "icon": "https://alpha.dustproject.org/api/assets/objects/61/icon",
+        "contract": "0x724dEF6d443099d560C063B629C3EA067c2110f9",
+        "coordinate": [[359, 73, -2524]],
+        "standingpoint": [359, 73, -2523]
+    },
+    "SunFlower": {
+        "icon": "https://alpha.dustproject.org/api/assets/objects/80/icon",
+        "contract": "0xBd4ac4c7B21908271C42d034566166D0c9908d53",
+        "coordinate": [[369, 73, -2524]],
+        "standingpoint": [369, 73, -2523]
+    },
+    "NeptuniumOre": {
+        "icon": "https://alpha.dustproject.org/api/assets/objects/119/icon",
+        "contract": "0x3F719A33A610B91378F143E28A4FF766Ff93B0D3",
+        "coordinate": [[379, 73, -2524]],
+        "standingpoint": [379, 73, -2523]
     }
 }
