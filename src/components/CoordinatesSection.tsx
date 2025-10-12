@@ -18,6 +18,10 @@ const LOCATIONS: LocationData[] = [
     name: "Southern Bay",
     coordinates: [360, 69, -2459],
   },
+  {
+    name: "Campfire Spot",
+    coordinates: [384, 70, -2458],
+  }
 ];
 
 // Define styling constants
