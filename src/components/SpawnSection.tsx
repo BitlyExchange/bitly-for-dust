@@ -1,6 +1,6 @@
 import { Vec3 } from "@dust/world/internal";
 import React, { useState, useEffect, useRef } from "react";
-import { Card, InputNumber, Button, Statistic, Row, Col, Typography } from "antd";
+import { Card, InputNumber, Button, Radio, Row, Col, Typography } from "antd";
 import { fetchForceFieldData, calculateUpdatedEnergy } from "../common/forceFieldEnergy";
 import { spawnPlayer } from "../common/spawnPlayer";
 import { useDustClient } from "../common/useDustClient";
@@ -14,7 +14,10 @@ const Constants = {
   ORIGIN_ENERGY_POINT: 1n * 1000n * 1000n * 100000000000000n // 1M energy
 };
 
-export const SPAWN_TILE: Vec3 = [223, 71, -2681];
+export const SPAWN_POINTS: Record<string, Vec3> = {
+  "Campfire Spot": [384, 69, -2456],
+  "Force Field Machine": [223, 71, -2681],
+};
 export const MAX_PLAYER_ENERGY = 8176;
 
 // ForceField coordinates
@@ -43,6 +46,9 @@ export function SpawnSection() {
   
   // Spawn energy percentage
   const [spawnEnergyPercent, setSpawnEnergyPercent] = useState<number>(10); // Default 10%
+  
+  // Selected spawn point
+  const [selectedSpawnPoint, setSelectedSpawnPoint] = useState<string>(Object.keys(SPAWN_POINTS)[0]); // Default to first spawn point
   
   // Cost calculation
   const [costAmount, setCostAmount] = useState<number>(0);
@@ -138,12 +144,10 @@ export function SpawnSection() {
       
       // Convert percentage to decimal (0-1 range)
       const energyPercentDecimal = spawnEnergyPercent / 100;
-      
-      console.log("ww: param: ", energyPercentDecimal, SPAWN_TILE, playerEntityId, dustClient);
 
       await spawnPlayer(
         energyPercentDecimal,
-        SPAWN_TILE,
+        SPAWN_POINTS[selectedSpawnPoint],
         playerEntityId,
         dustClient
       );
@@ -227,8 +231,8 @@ export function SpawnSection() {
         </div>
         ) : (
         <Row gutter={[16, 16]}>
-            {/* Left side - Multiplier Card */}
-            <Col xs={24} md={10}>
+            {/* Top section - Multiplier Card */}
+            <Col xs={24}>
               <Card
                 style={{
                   height: "100%",
@@ -289,8 +293,8 @@ export function SpawnSection() {
               </Card>
             </Col>
             
-            {/* Right side - Spawn Controls */}
-            <Col xs={24} md={14}>
+            {/* Bottom section - Spawn Controls */}
+            <Col xs={24}>
               <Card
                 style={{
                   height: "100%",
@@ -330,6 +334,50 @@ export function SpawnSection() {
                     <Text style={{ color: "#999999", fontSize: "0.8rem" }}>Min: 1%</Text>
                     <Text style={{ color: "#999999", fontSize: "0.8rem" }}>Max: 30%</Text>
                   </div>
+                </div>
+
+                <div style={{ marginBottom: "24px" }}>
+                  <Text style={{
+                    color: "#55FFFF",
+                    display: "block",
+                    marginBottom: "10px",
+                    fontSize: "1rem",
+                    fontWeight: "500"
+                  }}>
+                    Spawn Point
+                  </Text>
+                  <Radio.Group
+                    value={selectedSpawnPoint}
+                    onChange={(e) => setSelectedSpawnPoint(e.target.value)}
+                    style={{ width: "100%" }}
+                  >
+                    <div style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: "10px",
+                      background: "rgba(26, 26, 26, 0.5)",
+                      padding: "12px",
+                      borderRadius: "8px",
+                      border: "1px solid rgba(85, 255, 255, 0.1)"
+                    }}>
+                      {Object.keys(SPAWN_POINTS).map((pointName) => (
+                        <Radio
+                          key={pointName}
+                          value={pointName}
+                          style={{
+                            color: selectedSpawnPoint === pointName ? "#55FFFF" : "#AAAAAA",
+                            marginRight: 0,
+                            padding: "8px 12px",
+                            borderRadius: "4px",
+                            background: selectedSpawnPoint === pointName ? "rgba(85, 255, 255, 0.1)" : "transparent",
+                            border: selectedSpawnPoint === pointName ? "1px solid rgba(85, 255, 255, 0.2)" : "1px solid transparent"
+                          }}
+                        >
+                          {pointName}
+                        </Radio>
+                      ))}
+                    </div>
+                  </Radio.Group>
                 </div>
                 
                 <Row gutter={[16, 16]}>
